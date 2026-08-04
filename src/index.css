@@ -38,6 +38,12 @@ body:has(.light-theme) {
   animation: crt-flicker 0.15s infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .crt-effect {
+    animation: none;
+  }
+}
+
 .crt-effect::before {
   content: " ";
   display: block;

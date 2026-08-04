@@ -268,15 +268,11 @@ export const Lobby: React.FC<LobbyProps> = ({
                     gridTemplateColumns: `repeat(${Math.min(boardCols, 8)}, minmax(0, 1fr))`
                   }}
                 >
-                  {Array.from({ length: Math.min(boardRows, 8) }).map((_, rIdx) => (
-                    <div key={rIdx} className="flex gap-1">
-                      {Array.from({ length: Math.min(boardCols, 8) }).map((_, cIdx) => (
-                        <div
-                          key={cIdx}
-                          className="w-2.5 h-2.5 rounded-sm bg-slate-800/40 border border-slate-800/80 hover:bg-neonBlue/20 transition-all duration-300"
-                        />
-                      ))}
-                    </div>
+                  {Array.from({ length: Math.min(boardRows, 8) * Math.min(boardCols, 8) }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className="w-2.5 h-2.5 rounded-sm bg-slate-800/40 border border-slate-800/80 hover:bg-neonBlue/20 transition-all duration-300"
+                    />
                   ))}
                 </div>
                 {boardRows > 8 || boardCols > 8 ? (
@@ -495,7 +491,7 @@ export const Lobby: React.FC<LobbyProps> = ({
       {/* Main Start Action CTA */}
       <div className="pt-4 text-center relative z-10">
         <button
-          onClick={() => handleBtnClick(onStartGame)}
+          onClick={onStartGame}
           className="w-full md:w-3/4 py-5 bg-gradient-to-r from-neonBlue via-neonBlue/80 to-neonGreen text-slate-950 font-black rounded-2xl text-lg hover:brightness-110 active:scale-[0.98] transition-all tracking-[0.2em] shadow-[0_0_30px_rgba(0,240,255,0.25)] uppercase font-gaming group overflow-hidden relative"
         >
           <span className="relative z-10">START REACTION CYCLE</span>

@@ -59,13 +59,13 @@ export function App() {
     setSoundEnabled(nextVal);
   };
 
+  useEffect(() => {
+    localStorage.setItem('chain_reaction_light_theme', String(isLightTheme));
+  }, [isLightTheme]);
+
   const toggleTheme = () => {
     soundEngine.playClick();
-    setIsLightTheme(prev => {
-      const next = !prev;
-      localStorage.setItem('chain_reaction_light_theme', String(next));
-      return next;
-    });
+    setIsLightTheme(prev => !prev);
   };
 
   const handleVersionClick = () => {

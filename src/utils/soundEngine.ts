@@ -3,6 +3,7 @@ class SoundEngine {
   private isEnabled: boolean = true;
   private bgSequenceId: number | null = null;
   private synthLoopActive: boolean = false;
+  private activeBgOscillator: OscillatorNode | null = null;
 
   constructor() {
     // Read persisted setting
@@ -254,6 +255,7 @@ class SoundEngine {
       gain.connect(this.ctx.destination);
 
       osc.start(now);
+      this.activeBgOscillator = osc;
       osc.stop(now + 5.0);
 
       // Schedule next event in 4 seconds
@@ -268,6 +270,14 @@ class SoundEngine {
     if (this.bgSequenceId) {
       clearTimeout(this.bgSequenceId);
       this.bgSequenceId = null;
+    }
+    if (this.activeBgOscillator) {
+      try {
+        this.activeBgOscillator.stop();
+      } catch (e) {
+        // Ignored if already stopped or not started
+      }
+      this.activeBgOscillator = null;
     }
   }
 }

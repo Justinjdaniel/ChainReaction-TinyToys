@@ -36,7 +36,7 @@ export const ExplodingHeader: React.FC<ExplodingHeaderProps> = ({ text, classNam
           <span
             key={index}
             style={style}
-            className="inline-block transition-all duration-750 transform origin-center group-hover:translate-x-[var(--explode-x)] group-hover:translate-y-[var(--explode-y)] group-hover:rotate-[var(--explode-rot)] group-hover:scale-[var(--explode-scale)] group-hover:opacity-40 group-hover:text-neonRed"
+            className="inline-block transition-all duration-750 transform origin-center group-hover:translate-x-[var(--explode-x)] group-hover:translate-y-[var(--explode-y)] group-hover:rotate-[var(--explode-rot)] group-hover:scale-[var(--explode-scale)] group-hover:opacity-40 group-hover:text-neonRed motion-reduce:transition-none motion-reduce:transform-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0 motion-reduce:group-hover:rotate-0 motion-reduce:group-hover:scale-100 motion-reduce:group-hover:opacity-100"
           >
             {char === ' ' ? '\u00A0' : char}
           </span>
