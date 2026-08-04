@@ -5,6 +5,8 @@ import { Board } from './components/Board';
 import { ChainReactionEngine } from './utils/ChainReactionEngine';
 import { ChainReactionAI } from './utils/ChainReactionAI';
 import { useGameStats } from './hooks/useGameStats';
+import { soundEngine } from './utils/soundEngine';
+import { ExplodingHeader } from './components/ExplodingHeader';
 
 export function App() {
   const [inGame, setInGame] = useState(false);
@@ -29,7 +31,56 @@ export function App() {
 
   const { stats, leaderboard, recordWin, recordLoss, recordEfficiency, resetStats } = useGameStats();
 
+  // Sound and Theme states
+  const [soundEnabled, setSoundEnabled] = useState(() => soundEngine.getSoundEnabled());
+  const [isLightTheme, setIsLightTheme] = useState(() => {
+    return localStorage.getItem('chain_reaction_light_theme') === 'true';
+  });
+
+  // Easter Egg States
+  const versionClicksRef = useRef(0);
+  const [crtMode, setCrtMode] = useState(false);
+
+  // Initialize/track sound engine changes
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      if (soundEnabled) {
+        soundEngine.startBackgroundMusic();
+      }
+      window.removeEventListener('click', handleFirstInteraction);
+    };
+    window.addEventListener('click', handleFirstInteraction);
+    return () => window.removeEventListener('click', handleFirstInteraction);
+  }, [soundEnabled]);
+
+  const toggleSound = () => {
+    soundEngine.playClick();
+    const nextVal = soundEngine.toggleSound();
+    setSoundEnabled(nextVal);
+  };
+
+  useEffect(() => {
+    localStorage.setItem('chain_reaction_light_theme', String(isLightTheme));
+  }, [isLightTheme]);
+
+  const toggleTheme = () => {
+    soundEngine.playClick();
+    setIsLightTheme(prev => !prev);
+  };
+
+  const handleVersionClick = () => {
+    soundEngine.playClick();
+    versionClicksRef.current += 1;
+    if (versionClicksRef.current >= 5) {
+      // Toggle easter egg
+      setCrtMode(curr => !curr);
+      soundEngine.playSecretEasterEggSong();
+      versionClicksRef.current = 0;
+    }
+  };
+
   const handleStartGame = () => {
+    soundEngine.playClick();
     const engine = new ChainReactionEngine(boardRows, boardCols, players.length);
     engineRef.current = engine;
     setGrid(engine.cloneGridState());
@@ -42,6 +93,7 @@ export function App() {
   };
 
   const handleExitGame = () => {
+    soundEngine.playClick();
     setInGame(false);
     setWinner(null);
     setHistory([]);
@@ -80,6 +132,9 @@ export function App() {
 
     setIsProcessing(true);
 
+    // Play placement chime
+    soundEngine.playPlaceOrb();
+
     const success = await engine.placeOrb(r, c, currentPlayer, async (snapshot) => {
       const exploding = [];
       for (let row = 0; row < engine.rows; row++) {
@@ -89,6 +144,12 @@ export function App() {
           }
         }
       }
+
+      if (exploding.length > 0) {
+        // Play synthetic explosion sound
+        soundEngine.playExplode();
+      }
+
       setExplodingCells(exploding);
       setGrid(snapshot);
       await new Promise(resolve => setTimeout(resolve, 350));
@@ -105,12 +166,14 @@ export function App() {
           setWinner(winningPlayer);
 
           if (winningPlayer.type === 'human') {
+            soundEngine.playVictory();
             recordWin();
             const boardDiff = players.some(p => p.type === 'ai')
               ? (players.find(p => p.type === 'ai')?.difficulty || 'medium')
               : 'local';
             recordEfficiency(engine.turnCount, boardRows, boardCols, boardDiff);
           } else {
+            soundEngine.playDefeat();
             recordLoss();
           }
         }
@@ -127,7 +190,7 @@ export function App() {
     const activePlayer = players[currentPlayer];
     if (activePlayer.type === 'ai') return;
 
-    // Save the current engine state to history before a human player makes a move
+    // Save current engine state to history before human moves
     if (engineRef.current) {
       setHistory((prev) => [...prev, engineRef.current!.clone()]);
     }
@@ -136,9 +199,10 @@ export function App() {
   };
 
   const handleUndo = () => {
+    soundEngine.playClick();
     if (isProcessing || history.length === 0) return;
 
-    // Pop the last saved engine state
+    // Pop saved engine state
     const previousEngine = history[history.length - 1];
     setHistory((prev) => prev.slice(0, -1));
 
@@ -151,29 +215,66 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-neonBlue selection:text-slate-950 tech-grid font-sans">
-      <header className="p-4 border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between">
+    <div className={`min-h-screen flex flex-col justify-between selection:bg-neonBlue selection:text-slate-950 tech-grid font-sans relative ${
+      isLightTheme
+        ? 'bg-slate-100 text-slate-900 border-slate-300'
+        : 'bg-slate-950 text-slate-100'
+    } ${crtMode ? 'crt-effect' : ''}`}>
+      {crtMode && <div className="crt-scanlines pointer-events-none absolute inset-0 z-50" />}
+
+      <header className={`p-4 border-b bg-opacity-80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between ${
+        isLightTheme ? 'border-slate-200 bg-white/80' : 'border-slate-900 bg-slate-950/80'
+      }`}>
         <div className="flex items-center gap-3">
           <div className="w-2.5 h-2.5 rounded-full bg-neonGreen animate-pulse shadow-[0_0_10px_#00ff66]" />
-          <span className="font-gaming text-xs md:text-sm tracking-[0.2em] font-extrabold uppercase text-slate-200">
+          <span className={`font-gaming text-xs md:text-sm tracking-[0.2em] font-extrabold uppercase ${
+            isLightTheme ? 'text-slate-800' : 'text-slate-200'
+          }`}>
             Chain Reaction PWA
           </span>
-          <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[9px] font-black text-neonRed font-mono tracking-wider ml-1">
+          <button
+            onClick={handleVersionClick}
+            className="px-2 py-0.5 rounded-lg bg-slate-900 border border-slate-800 text-[9px] font-black text-neonRed font-mono tracking-wider ml-1"
+          >
             v1.0.0
-          </span>
+          </button>
         </div>
 
-        {inGame && (
+        <div className="flex items-center gap-2">
+          {/* Sound Toggle */}
           <button
-            onClick={handleExitGame}
-            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 hover:text-neonRed border border-slate-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all font-gaming"
+            onClick={toggleSound}
+            aria-label={soundEnabled ? "Disable audio synthesizers" : "Enable audio synthesizers"}
+            className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+              soundEnabled
+                ? 'bg-neonGreen/10 border-neonGreen text-neonGreen shadow-[0_0_10px_rgba(0,255,102,0.15)]'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
           >
-            ← Exit Game
+            {soundEnabled ? '🔊 ON' : '🔇 OFF'}
           </button>
-        )}
+
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            aria-label={isLightTheme ? "Switch to artistic dark neon theme" : "Switch to retro synthwave light theme"}
+            className="p-2 rounded-xl border bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 text-xs font-bold transition-all"
+          >
+            {isLightTheme ? '🌙 DARK' : '☀️ LIGHT'}
+          </button>
+
+          {inGame && (
+            <button
+              onClick={handleExitGame}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 hover:text-neonRed border border-slate-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all font-gaming"
+            >
+              ← Exit
+            </button>
+          )}
+        </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center p-4">
+      <main className="flex-1 flex items-center justify-center p-4 relative z-10">
         {!inGame ? (
           <Lobby
             players={players}
@@ -186,6 +287,7 @@ export function App() {
             stats={stats}
             leaderboard={leaderboard}
             onResetStats={resetStats}
+            isLightTheme={isLightTheme}
           />
         ) : (
           <div className="w-full max-w-4xl flex flex-col items-center gap-6 relative z-10 animate-fadeIn">
@@ -196,9 +298,10 @@ export function App() {
               onCellClick={handleCellClick}
               isProcessing={isProcessing}
               explodingCells={explodingCells}
+              isLightTheme={isLightTheme}
             />
 
-            {/* Undo button rendered beneath the board */}
+            {/* Undo button */}
             <div className="flex justify-center w-full max-w-sm px-4">
               <button
                 onClick={handleUndo}
@@ -223,8 +326,11 @@ export function App() {
                 >
                   <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: winner.color }} />
 
-                  <h2 className="text-4xl font-black uppercase tracking-[0.2em] text-slate-100 font-gaming">
-                    VICTORY!
+                  <h2 className="text-center">
+                    <ExplodingHeader
+                      text="VICTORY!"
+                      className="text-4xl font-black uppercase tracking-[0.2em] text-slate-100 font-gaming"
+                    />
                   </h2>
                   <div className="flex justify-center">
                     <div
@@ -271,7 +377,9 @@ export function App() {
         )}
       </main>
 
-      <footer className="p-4 border-t border-slate-900 text-center text-[9px] font-mono text-slate-600 uppercase tracking-[0.3em] bg-slate-950">
+      <footer className={`p-4 border-t text-center text-[9px] font-mono uppercase tracking-[0.3em] ${
+        isLightTheme ? 'border-slate-200 bg-white text-slate-500' : 'border-slate-900 bg-slate-950 text-slate-600'
+      }`}>
         © CHAIN REACTION ENGINE v1.0.0 • QUANTUM LOCAL-FIRST TERMINAL • OFFLINE CAPABLE PWA
       </footer>
     </div>
