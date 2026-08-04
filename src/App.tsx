@@ -6,6 +6,7 @@ import { ChainReactionEngine } from './utils/ChainReactionEngine';
 import { ChainReactionAI } from './utils/ChainReactionAI';
 import { useGameStats } from './hooks/useGameStats';
 import { soundEngine } from './utils/soundEngine';
+import { ExplodingHeader } from './components/ExplodingHeader';
 
 export function App() {
   const [inGame, setInGame] = useState(false);
@@ -325,8 +326,11 @@ export function App() {
                 >
                   <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ backgroundColor: winner.color }} />
 
-                  <h2 className="text-4xl font-black uppercase tracking-[0.2em] text-slate-100 font-gaming">
-                    VICTORY!
+                  <h2 className="text-center">
+                    <ExplodingHeader
+                      text="VICTORY!"
+                      className="text-4xl font-black uppercase tracking-[0.2em] text-slate-100 font-gaming"
+                    />
                   </h2>
                   <div className="flex justify-center">
                     <div

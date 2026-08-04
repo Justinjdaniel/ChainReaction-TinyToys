@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Player } from '../types/game';
 import { soundEngine } from '../utils/soundEngine';
+import { ExplodingHeader } from './ExplodingHeader';
 
 interface LobbyProps {
   players: Player[];
@@ -136,10 +137,13 @@ export const Lobby: React.FC<LobbyProps> = ({
 
       {/* Title */}
       <div className="text-center space-y-3 relative z-10">
-        <h1 className="text-4xl md:text-6xl font-black tracking-[0.25em] bg-clip-text text-transparent bg-gradient-to-r from-neonRed via-neonBlue to-neonGreen drop-shadow-[0_0_15px_rgba(0,240,255,0.3)] uppercase font-gaming animate-float-slow">
-          Chain Reaction
+        <h1 className="text-center">
+          <ExplodingHeader
+            text="CHAIN REACTION"
+            className="text-4xl md:text-6xl font-black tracking-[0.25em] uppercase font-gaming drop-shadow-[0_0_15px_rgba(0,240,255,0.3)] bg-clip-text text-transparent bg-gradient-to-r from-neonRed via-neonBlue to-neonGreen"
+          />
         </h1>
-        <p className="text-xs text-slate-400 tracking-[0.4em] uppercase font-mono">
+        <p className="text-xs text-slate-400 tracking-[0.4em] uppercase font-mono mt-3">
           QUANTUM CASCADE REACTOR STRATEGY
         </p>
       </div>
